@@ -70,9 +70,9 @@ local function bluetooth(power)
 end
 
 function on_screen_event(event)
-    if event.systemWillSleep then
+    if event == hs.caffeinate.watcher.systemWillSleep then
 		bluetooth("off")		
-    elseif event.screensDidWake then
+    elseif event == hs.caffeinate.watcher.screensDidWake then
 		bluetooth("on")		
     end
 end
