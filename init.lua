@@ -1,6 +1,23 @@
 hs.loadSpoon("Lunette")
 spoon.Lunette:bindHotkeys()
 
+function reloadConfig(files)
+    doReload = false
+    for _,file in pairs(files) do
+        if file:sub(-4) == ".lua" then
+            doReload = true
+        end
+    end
+    if doReload then
+        hs.reload()
+    end
+end
+
+configWatcher = hs.pathwatcher.new(os.getenv("HOME") .. "/.hammerspoon/", reloadConfig):start()
+hs.alert.show("Config loaded")
+
+
+
 local function open(name)
     return function()
         hs.application.launchOrFocus(name)
@@ -9,23 +26,30 @@ local function open(name)
         end
     end
 end 
+local function bluetooth(power)
+    print("Setting bluetooth to " .. power)
+	-- requires $(brew install blueutil)
+    local t = hs.task.new("/usr/local/bin/blueutil", checkBluetoothResult, {"--power", power})
+    t:start()
+end
 
-hs.hotkey.bind({"alt"}, "F", open("Firefox Developer Edition"))
-hs.hotkey.bind({"alt"}, "T", open("kitty"))
-hs.hotkey.bind({"alt"}, "S", open("Slack"))
-hs.hotkey.bind({"alt"}, "G", open("Goland"))
-
-
-wifiMenu = hs.menubar.new()
-wifiNameWork = "felyx"
-
-local function setSlackStatus() 
+local function setSlackStatus(text, emoji) 
     local json = require("json")
 
+	local slackApiKey = require("slack")
+
     headers = {
-	["Content-Type"] = "application/json; charset=utf-8",
-	["Authorization"] = string.format("Bearer %s", os.getenv("SLACK_API_TOKEN"))
+		["Content-Type"] = "application/json; charset=utf-8",
+		["Authorization"] = string.format("Bearer %s", slackApiKey)
     }
+
+
+	request_body = {
+		profile = {
+			status_text = text,
+			status_emoji = emoji
+		}
+	}
 
     hs.http.asyncPost(
 	"https://slack.com/api/users.profile.set",
@@ -38,36 +62,32 @@ local function setSlackStatus()
     )
 end
 
+hs.hotkey.bind({"alt"}, "F", open("Firefox Developer Edition"))
+hs.hotkey.bind({"alt"}, "T", open("kitty"))
+hs.hotkey.bind({"alt"}, "S", open("Slack"))
+hs.hotkey.bind({"alt"}, "G", open("Goland"))
+
+
+wifiMenu = hs.menubar.new()
+wifiNameWork = "felyx"
 
 local function setActiveNetworkName() 
     local wifiName = hs.wifi.currentNetwork() or "Offline"
+	hs.timer.doAfter(3, function() 
+		if (wifiName ~= wifiNameWork and wifiName ~= nil) then
+			setSlackStatus("Working Remotely", ":house_with_garden:")
+		else 
+			setSlackStatus("Office", ":computer:")
+		end
+	end)
     wifiMenu:setTitle(wifiName)
 end
 
-
 hs.network.reachability.internet():setCallback(function(self, flags)
     if (flags & hs.network.reachability.flags.reachable) > 0 then
-	    print("ACTIVE")
     end 
 end):start()
 
-
-
-spotifyMenu = hs.menubar.new()
-hs.timer.doEvery(1, function() 
-	local track = string.format("%s - %s", hs.spotify.getCurrentTrack(), hs.spotify.getCurrentArtist())
-	if not hs.spotify.isPlaying() then
-		track = "No Track Playing"
-	end
-	spotifyMenu:setTitle(track)
-end):start()
-
-
-local function bluetooth(power)
-    print("Setting bluetooth to " .. power)
-    local t = hs.task.new("/usr/local/bin/blueutil", checkBluetoothResult, {"--power", power})
-    t:start()
-end
 
 function on_screen_event(event)
     if event == hs.caffeinate.watcher.systemWillSleep then
