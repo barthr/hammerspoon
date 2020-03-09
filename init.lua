@@ -70,7 +70,7 @@ wifiNameWork = "felyx"
 local function setActiveNetworkName()
     local wifiName = hs.wifi.currentNetwork() or "Offline"
     hs.timer.doAfter(
-        3,
+        10,
         function()
             if (wifiName ~= wifiNameWork and wifiName ~= nil) then
                 setSlackStatus("Working Remotely", ":house_with_garden:")
