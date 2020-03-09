@@ -82,13 +82,6 @@ local function setActiveNetworkName()
     wifiMenu:setTitle(wifiName)
 end
 
-hs.network.reachability.internet():setCallback(
-    function(self, flags)
-        if (flags & hs.network.reachability.flags.reachable) > 0 then
-        end
-    end
-):start()
-
 function on_screen_event(event)
     if event == hs.caffeinate.watcher.systemWillSleep then
         bluetooth("off")
