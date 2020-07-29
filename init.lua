@@ -1,3 +1,6 @@
+io = require("io")
+
+
 hs.loadSpoon("Lunette")
 spoon.Lunette:bindHotkeys()
 
@@ -89,6 +92,7 @@ function on_screen_event(event)
         bluetooth("on")
     end
 end
+
 
 powerWatcher = hs.caffeinate.watcher.new(on_screen_event):start()
 wifiWatcher = hs.wifi.watcher.new(setActiveNetworkName):start()
